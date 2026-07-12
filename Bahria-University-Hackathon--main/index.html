@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TECHATHON — A Different Creative Approach</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;1,300&family=Bebas+Neue&family=Pacifico&family=Bungee&family=Chakra+Petch:wght@400;600;700&family=Rajdhani:wght@600;700&family=Orbitron:wght@700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --black: #03050a;
+      --white: #e8edf5;
+      --accent2: #06b6d4;
+      --muted: rgba(232,237,245,0.42);
+      --border: rgba(255,255,255,0.07);
+    }
+    html { scroll-behavior: smooth; }
+    body { background: var(--black); color: var(--white); font-family: 'IBM Plex Sans', sans-serif; overflow-x: hidden; cursor: none; }
+
+    /* CURSOR */
+    #cursor { position: fixed; width: 8px; height: 8px; background: var(--white); border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%,-50%); mix-blend-mode: difference; transition: width .2s, height .2s; }
+    #cursor-ring { position: fixed; width: 30px; height: 30px; border: 1px solid rgba(232,237,245,0.25); border-radius: 50%; pointer-events: none; z-index: 9998; transform: translate(-50%,-50%); transition: width .3s, height .3s, border-color .3s; }
+
+    /* GRAIN */
+    #grain { position: fixed; inset: -50%; width: 200%; height: 200%; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); opacity: 0.034; pointer-events: none; z-index: 9000; animation: grain .4s steps(1) infinite; }
+    @keyframes grain { 0%{transform:translate(0,0)} 25%{transform:translate(-2%,-3%)} 50%{transform:translate(3%,1%)} 75%{transform:translate(-1%,3%)} 100%{transform:translate(2%,-1%)} }
+
+    /* NAVBAR */
+    nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; display: flex; align-items: center; justify-content: space-between; padding: 26px 56px; transition: background .4s ease, padding .35s ease; border-bottom: 1px solid transparent; }
+    nav.scrolled { background: rgba(3,5,10,0.84); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); padding: 16px 56px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .nav-logo { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 0.92rem; letter-spacing: 0.24em; color: var(--white); text-decoration: none; text-transform: uppercase; }
+    .nav-links { display: flex; align-items: center; gap: 36px; list-style: none; }
+    .nav-links a { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; font-weight: 400; letter-spacing: 0.07em; color: rgba(232,237,245,0.48); text-decoration: none; position: relative; transition: color .25s ease; }
+    .nav-links a::after { content: ''; position: absolute; bottom: -3px; left: 0; width: 0; height: 1px; background: var(--accent2); transition: width .3s ease; }
+    .nav-links a:hover { color: var(--white); }
+    .nav-links a:hover::after { width: 100%; }
+    .nav-cta { padding: 9px 22px !important; border: 1px solid rgba(232,237,245,0.18) !important; border-radius: 50px !important; color: rgba(232,237,245,0.75) !important; transition: all .3s ease !important; background: rgba(232,237,245,0.04) !important; }
+    .nav-cta::after { display:none !important; }
+    .nav-cta:hover { background: rgba(232,237,245,0.09) !important; border-color: rgba(232,237,245,0.38) !important; color: var(--white) !important; }
+
+    /* ─── HERO ─── */
+    #hero { position: relative; width: 100%; height: 100vh; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; overflow: hidden; padding-left: 4vw; }
+    #ball-container { position: fixed; pointer-events: auto; z-index: 1; will-change: transform; }
+    #jelly-canvas { display: block; }
+    .hero-text { position: relative; z-index: 3; pointer-events: none; }
+    .hero-headline { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: clamp(2.2rem, 5.5vw, 6.5rem); line-height: 1.08; letter-spacing: -0.02em; color: var(--white); text-transform: uppercase; }
+    .hero-headline span { display: block; }
+    .hero-headline .hl-1 { margin-left: 0; }
+    .hero-headline .hl-2 { margin-left: clamp(60px, 18vw, 260px); }
+    .hero-headline .hl-3 { margin-left: clamp(120px, 36vw, 520px); }
+    .scroll-indicator { position: relative; margin-top: 38px; margin-left: 2px; display: flex; align-items: flex-start; z-index: 5; opacity: 0.55; pointer-events: none; }
+    .scroll-arrow-icon { width: 28px; height: 28px; border: 1px solid rgba(232,237,245,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; animation: arrowBounce 2s ease-in-out infinite; }
+    .scroll-arrow-icon svg { width: 12px; height: 12px; }
+    @keyframes arrowBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(4px)} }
+
+    /* ─── X SECTION ─── */
+    #x-section {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: var(--black);
+    }
+
+    #x-canvas-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+
+    #x-letter {
+      position: absolute;
+      font-family: 'Bebas Neue', cursive;
+      font-size: clamp(200px, 30vw, 420px);
+      line-height: 1;
+      z-index: 2;
+      background: linear-gradient(135deg, #ff00cc, #ff6b00, #ffdd00, #00ff88);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 40px rgba(255, 100, 200, 0.3));
+      transform-origin: center center;
+      will-change: transform;
+      user-select: none;
+    }
+
+    /* ─── WORMHOLE / TUNNEL SECTION ─── */
+    #wormhole-section {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #000;
+    }
+    #wormhole-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+    #wormhole-line {
+      position: relative;
+      z-index: 5;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: clamp(0.9rem, 2.2vw, 1.6rem);
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(232, 237, 245, 0.9);
+      text-align: center;
+      opacity: 0;
+      transform: scale(0.92);
+      transition: opacity 1s ease, transform 1s ease;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #wormhole-line.visible { opacity: 1; transform: scale(1); }
+
+    /* ─── TRUSTED GRID ─── */
+    #trusted { position: relative; padding: 100px 0 80px; overflow: hidden; z-index: 2; }
+    .trusted-grid-wrap { max-width: 1100px; margin: 0 auto; padding: 0 40px; margin-left: 55%; }
+    .trusted-grid { display: flex; flex-direction: column; }
+    .trusted-row { display: flex; align-items: stretch; }
+    .brand-box { position: relative; flex: 1; min-height: 90px; display: flex; align-items: center; justify-content: center; margin: -0.5px; background: transparent; transition: background .3s ease; overflow: hidden; }
+    .brand-box:hover { background: rgba(255,255,255,0.025); }
+    .brand-box::before { content: ''; position: absolute; inset: 0; border: 1px dashed rgba(255,255,255,0.10); pointer-events: none; }
+    .brand-box::after { content: ''; position: absolute; top: -2px; left: -2px; width: 4px; height: 4px; background: rgba(255,255,255,0.22); border-radius: 50%; box-shadow: calc(100% + 0px) 0 0 0 rgba(255,255,255,0.22), 0 calc(100% + 0px) 0 0 rgba(255,255,255,0.22), calc(100% + 0px) calc(100% + 0px) 0 0 rgba(255,255,255,0.22); pointer-events: none; }
+    .brand-text { color: rgba(232,237,245,0.88); text-align: center; padding: 10px 16px; letter-spacing: 0.01em; line-height: 1; position: relative; z-index: 1; }
+    .brand-slack { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 1.25rem; }
+    .brand-microsoft { font-family: 'IBM Plex Sans', sans-serif; font-weight: 300; font-size: 1.1rem; }
+    .brand-webflow { font-family: 'Bebas Neue', cursive; font-size: 1.5rem; letter-spacing: 0.06em; }
+    .brand-salesforce { font-family: 'IBM Plex Sans', sans-serif; font-weight: 300; font-size: 0.88rem; letter-spacing: 0.12em; text-transform: uppercase; }
+    .brand-frontify { font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 1.1rem; }
+    .brand-lando { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.82rem; letter-spacing: 0.08em; text-transform: uppercase; }
+    .brand-steven { font-family: 'IBM Plex Mono', monospace; font-weight: 400; font-size: 1rem; }
+    .brand-steven .dot { font-weight: 700; font-size: 1.4em; vertical-align: middle; }
+    .brand-trevor { font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 1.15rem; letter-spacing: 0.06em; text-transform: uppercase; }
+    .brand-jasper { font-family: 'Bungee', cursive; font-size: 1.1rem; }
+    .brand-aptos { font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 1.2rem; letter-spacing: 0.1em; text-transform: uppercase; }
+    .brand-bella { font-family: 'Pacifico', cursive; font-size: 1.05rem; }
+    .brand-pwc { font-family: 'IBM Plex Sans', sans-serif; font-weight: 300; font-size: 1.1rem; letter-spacing: 0.08em; }
+
+    /* ─── ABOUT ─── */
+    #about { position: relative; padding: 100px 40px 100px; display: flex; flex-direction: column; align-items: center; text-align: center; overflow: hidden; }
+    .about-statement { font-family: 'IBM Plex Mono', monospace; font-weight: 500; font-size: clamp(1.7rem, 4vw, 4.6rem); line-height: 1.18; letter-spacing: -0.015em; color: var(--white); max-width: 960px; margin: 0 auto 72px; }
+    .about-statement .hollow { color: transparent; -webkit-text-stroke: 1px rgba(232,237,245,0.28); }
+    .about-statement .accent { color: var(--accent2); }
+    .divider { width: 44px; height: 1px; background: rgba(232,237,245,0.1); margin: 0 auto 70px; }
+    .about-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; max-width: 800px; width: 100%; text-align: left; }
+    .about-col { padding-top: 22px; border-top: 1px solid rgba(232,237,245,0.08); }
+    .about-col p { font-family: 'IBM Plex Sans', sans-serif; font-size: 0.87rem; line-height: 1.92; color: rgba(232,237,245,0.48); font-weight: 300; }
+    .amb { position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; filter: blur(90px); }
+    .amb1 { width: 600px; height: 600px; background: radial-gradient(circle, rgba(37,99,235,0.05) 0%, transparent 65%); top: 8%; right: -14%; }
+    .amb2 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(6,182,212,0.04) 0%, transparent 65%); bottom: 5%; left: -10%; }
+
+    /* ─── TOGETHER ─── */
+    #together { position: relative; padding: 120px 60px 160px; max-width: 1300px; margin: 0 auto; display: flex; align-items: flex-start; gap: 90px; }
+    .together-left { flex: 0 0 320px; position: sticky; top: 30vh; align-self: flex-start; }
+    .together-headline { font-family: 'IBM Plex Mono', monospace; font-weight: 500; font-size: clamp(1.8rem, 2.8vw, 3.5rem); line-height: 1.14; color: var(--white); }
+    .together-headline .tog-italic { font-family: 'IBM Plex Sans', sans-serif; font-style: italic; font-weight: 300; color: rgba(232,237,245,0.42); display: block; }
+    .tog-plus { color: var(--accent2); font-size: 0.75em; vertical-align: super; margin: 0 1px; opacity: 0.7; }
+    .together-right { flex: 1; display: flex; flex-direction: column; gap: 14px; }
+    .card-pair { display: flex; gap: 12px; align-items: flex-start; }
+    .card-pair .c-right { transform: translateY(-44px); }
+    .brand-card { flex: 1; height: 210px; border-radius: 20px; display: flex; align-items: center; justify-content: center; padding: 22px 14px; position: relative; overflow: hidden; border: 1.5px solid rgba(255,255,255,0.08); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03), 0 2px 2px rgba(0,0,0,0.7); transition: transform .3s ease, box-shadow .3s ease; }
+    .brand-card:hover { transform: translateY(-6px) !important; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06), 0 22px 52px rgba(0,0,0,0.6); }
+    .brand-card::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.035) 3px, rgba(0,0,0,0.035) 4px); pointer-events: none; border-radius: inherit; z-index: 10; }
+    .card-brand-text { font-size: 1.3rem; text-align: center; line-height: 1.1; position: relative; z-index: 5; }
+    .card-solo { display: flex; }
+    .card-solo .brand-card { flex: none; width: 240px; }
+    .card-lando { background: #000; border-color: rgba(255,255,255,0.13); box-shadow: inset 0 0 40px rgba(255,255,255,0.02), 0 2px 2px rgba(0,0,0,0.9); }
+    .card-lando .card-brand-text { color: #fff; font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.88rem; letter-spacing: 0.12em; text-transform: uppercase; }
+    .card-wizcom { background: rgba(14,18,28,0.95); border-color: rgba(232,237,245,0.14); }
+    .card-wizcom .card-brand-text { color: #e8edf5; font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 1.3rem; letter-spacing: 0.06em; }
+    .card-aether { background: linear-gradient(160deg,#050710 0%,#091422 60%,#040608 100%); border-color: rgba(37,99,235,0.22); box-shadow: inset 0 0 50px rgba(37,99,235,0.07), 0 2px 2px rgba(0,0,0,0.9); }
+    .card-aether .airpods-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: center; padding: 12px 16px; opacity: 0.9; z-index: 1; }
+    .card-aether .card-brand-text { position: absolute; bottom: 12px; left: 0; right: 0; color: rgba(232,237,245,0.5); font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.65rem; letter-spacing: 0.14em; text-align: center; z-index: 6; }
+    .card-bella { border-color: rgba(135,206,235,0.28); overflow: hidden; background: linear-gradient(180deg,#1a4a6e 0%,#0a1628 100%); }
+    .card-bella .sky-bg { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% -10%, #87ceeb55 0%, transparent 65%), linear-gradient(180deg,#87ceeb22 0%,transparent 60%); z-index: 0; }
+    .card-bella .card-brand-text { color: #e8f4ff; font-family: 'Pacifico', cursive; font-size: 1.1rem; z-index: 5; text-shadow: 0 2px 14px rgba(0,0,0,0.6); }
+    .card-jasper { background: linear-gradient(135deg,#c44f00 0%,#ea6f10 55%,#fcd190 100%); border-color: rgba(251,146,60,0.4); box-shadow: inset 0 0 40px rgba(255,100,0,0.14), 0 2px 2px rgba(0,0,0,0.6); }
+    .card-jasper .card-brand-text { color: #fff; font-family: 'Bungee', cursive; font-size: 1.5rem; text-shadow: 0 2px 18px rgba(0,0,0,0.3); }
+    .card-black-violet { background: radial-gradient(ellipse at 65% 35%,#5b21b6 0%,#0c0416 65%); border-color: rgba(109,40,217,0.35); box-shadow: inset 0 0 40px rgba(109,40,217,0.12), 0 2px 2px rgba(0,0,0,0.8); }
+    .card-black-violet .card-brand-text { color: #93c5fd; font-family: 'Bebas Neue', cursive; font-size: 1.85rem; letter-spacing: 0.1em; }
+    .card-black-violet .violet-circle { display: inline-block; width: 16px; height: 16px; background: radial-gradient(circle,#a78bfa,#6d28d9); border-radius: 50%; vertical-align: middle; margin: 0 4px; box-shadow: 0 0 10px rgba(109,40,217,0.7); }
+    .card-aptos { background: #000; border-color: rgba(255,255,255,0.09); }
+    .card-aptos .card-brand-text { color: #fff; font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 1.3rem; letter-spacing: 0.16em; }
+    .card-webflow-blue { background: linear-gradient(145deg,#1740a8 0%,#2563eb 60%,#3b82f6 100%); border-color: rgba(59,130,246,0.45); box-shadow: inset 0 0 40px rgba(37,99,235,0.2), 0 2px 2px rgba(0,0,0,0.6); }
+    .card-webflow-blue .card-brand-text { color: #fff; font-family: 'Bebas Neue', cursive; font-size: 1.65rem; letter-spacing: 0.08em; }
+    .card-davidle { background: linear-gradient(135deg,#1a3a9e 0%,#2256c7 100%); border-color: rgba(59,130,246,0.35); }
+    .card-davidle .card-brand-text { color: #fff; font-family: 'IBM Plex Sans', sans-serif; font-weight: 300; font-size: 0.95rem; letter-spacing: 0.06em; }
+
+    /* ─── AWARDS ─── */
+    #awards { padding: 100px 0 80px; display: flex; flex-direction: column; align-items: center; border-top: 1px solid var(--border); }
+    .awards-list { width: 80%; max-width: 1100px; display: flex; flex-direction: column; }
+    .award-row { display: flex; align-items: stretch; border-bottom: 1px solid var(--border); padding: 28px 0; gap: 0; transition: background .25s ease; position: relative; }
+    .award-row:first-child { border-top: 1px solid var(--border); }
+    .award-row:hover { background: rgba(255,255,255,0.018); }
+    .award-index { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; font-weight: 400; color: var(--muted); letter-spacing: 0.08em; width: 72px; flex-shrink: 0; padding-top: 4px; user-select: none; }
+    .award-name { flex: 1; font-family: 'IBM Plex Mono', monospace; font-weight: 400; font-size: clamp(1rem, 2vw, 1.6rem); letter-spacing: 0.02em; color: #e8edf5; line-height: 1; transition: color .25s ease; }
+    .award-meta { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 3px; text-align: right; min-width: 210px; flex-shrink: 0; }
+    .award-meta span { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; font-weight: 400; letter-spacing: 0.09em; color: var(--muted); line-height: 1.55; text-transform: uppercase; }
+    .award-meta .meta-highlight { color: rgba(232,237,245,0.72); }
+    .award-row.is-active .award-name { color: var(--accent2); }
+
+    /* ─── FOOTER ─── */
+    footer { border-top: 1px solid var(--border); padding: 80px 0 0; position: relative; overflow: hidden; }
+    .footer-cols { padding: 0 7vw 60px; display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 56px; align-items: start; border-bottom: 1px solid var(--border); }
+    .footer-mega-col { display: flex; flex-direction: column; gap: 28px; align-items: flex-start; }
+    .footer-mega-text { font-family: 'Bebas Neue', cursive; font-size: clamp(2.4rem, 5.5vw, 6rem); line-height: 0.92; color: var(--white); letter-spacing: 0.04em; }
+    .footer-mega-text .mega-accent { color: var(--accent2); }
+
+    /* Enhanced footer CTA */
+    .footer-mega-btn {
+      display: inline-flex; align-items: center; gap: 10px; padding: 13px 28px;
+      border: 1px solid rgba(6,182,212,0.35); border-radius: 50px;
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--white); text-decoration: none;
+      background: rgba(6,182,212,0.06); cursor: none;
+      transition: background .3s ease, border-color .3s ease, transform .3s ease, box-shadow .3s ease;
+      position: relative; overflow: hidden;
+    }
+    .footer-mega-btn::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(6,182,212,0.12), transparent);
+      transform: translateX(-100%); transition: transform .5s ease;
+    }
+    .footer-mega-btn:hover::before { transform: translateX(100%); }
+    .footer-mega-btn:hover { background: rgba(6,182,212,0.14); border-color: var(--accent2); transform: translateX(4px); box-shadow: 0 0 24px rgba(6,182,212,0.2); }
+    .footer-mega-btn svg { width: 13px; height: 13px; stroke: currentColor; }
+
+    .footer-col h5 { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; }
+    .sitemap-list { list-style: none; }
+    .sitemap-list li { margin-bottom: 10px; }
+    .sitemap-list a { font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; font-weight: 400; letter-spacing: 0.06em; color: rgba(232,237,245,0.56); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: color .25s ease, gap .25s ease; }
+    .sitemap-list a:hover { color: var(--white); gap: 10px; }
+    .sitemap-list a .arr { opacity: 0.45; font-size: 0.7rem; }
+    .social-list { list-style: none; }
+    .social-list li { margin-bottom: 10px; }
+    .social-list a { font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; font-weight: 400; letter-spacing: 0.06em; color: rgba(232,237,245,0.56); text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: color .25s ease; }
+    .social-list a:hover { color: var(--white); }
+    .social-icon { width: 14px; height: 14px; opacity: 0.45; }
+    .office-list { list-style: none; }
+    .office-list li { margin-bottom: 18px; }
+    .office-city { font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; font-weight: 500; letter-spacing: 0.08em; color: rgba(232,237,245,0.75); text-transform: uppercase; display: block; margin-bottom: 3px; }
+    .office-addr { font-family: 'IBM Plex Sans', sans-serif; font-size: 0.76rem; font-weight: 300; line-height: 1.6; color: rgba(232,237,245,0.35); }
+
+    /* Enhanced footer bottom */
+    .footer-bottom {
+      border-top: 1px solid var(--border); padding: 36px 7vw;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 24px;
+      background: rgba(255,255,255,0.01);
+    }
+    .ask-ai-block { display: flex; flex-direction: column; gap: 14px; }
+    .ask-ai-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+    .ask-ai-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .ai-pill {
+      display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px 8px 8px;
+      border: 1px solid var(--border); border-radius: 30px;
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; letter-spacing: 0.08em;
+      color: rgba(232,237,245,0.5); text-decoration: none;
+      background: rgba(255,255,255,0.03); cursor: none;
+      transition: all .3s ease;
+    }
+    .ai-pill:hover { background: rgba(6,182,212,0.08); border-color: rgba(6,182,212,0.3); color: var(--white); transform: translateY(-2px); }
+    .ai-logo-box { width: 22px; height: 22px; border-radius: 6px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+    .ai-logo-box img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
+    /* AI pill color accents on hover */
+    .ai-pill.chatgpt:hover { border-color: rgba(16,163,127,0.4); background: rgba(16,163,127,0.06); }
+    .ai-pill.claude:hover { border-color: rgba(204,136,80,0.4); background: rgba(204,136,80,0.06); }
+    .ai-pill.gemini:hover { border-color: rgba(66,133,244,0.4); background: rgba(66,133,244,0.06); }
+    .ai-pill.perplexity:hover { border-color: rgba(32,201,151,0.4); background: rgba(32,201,151,0.06); }
+
+    /* Enhanced footer bottom right */
+    .footer-right-bottom { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+    .footer-copy { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; letter-spacing: 0.1em; color: rgba(232,237,245,0.22); text-align: right; }
+
+    /* Footer glow line */
+    .footer-glow-line {
+      width: 100%; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(6,182,212,0.3), rgba(255,100,200,0.2), rgba(6,182,212,0.3), transparent);
+      margin-bottom: 0;
+    }
+
+    /* ─── REVEAL ─── */
+    .reveal { opacity:0; transform:translateY(38px); transition:opacity .9s cubic-bezier(.22,1,.36,1), transform .9s cubic-bezier(.22,1,.36,1); }
+    .reveal.v { opacity:1; transform:translateY(0); }
+    .d1{transition-delay:.1s} .d2{transition-delay:.22s} .d3{transition-delay:.36s}
+
+    /* RESPONSIVE */
+    @media(max-width:960px){
+      #together { flex-direction: column; padding: 80px 24px; gap: 50px; }
+      .together-left { position: static; flex: none; width: 100%; }
+      .card-pair .c-right { transform: none; }
+      .awards-list { width: 92%; }
+      .award-name { font-size: clamp(0.9rem, 3vw, 1.3rem); }
+      .footer-cols { grid-template-columns: 1fr 1fr; gap: 40px; padding: 0 5vw 50px; }
+      .footer-mega-col { grid-column: 1 / -1; }
+      .trusted-grid-wrap { margin-left: auto; margin-right: auto; }
+    }
+    @media(max-width:768px){
+      nav{padding:20px 22px;} nav.scrolled{padding:13px 22px;}
+      .nav-links li:not(:last-child){display:none;}
+      #about{padding:90px 22px;} .about-cols{grid-template-columns:1fr;gap:34px;}
+      .card-pair{flex-direction:column;}
+      .hero-headline .hl-2 { margin-left: clamp(30px, 10vw, 100px); }
+      .hero-headline .hl-3 { margin-left: clamp(60px, 20vw, 200px); }
+      .awards-list { width: 100%; padding: 0 22px; }
+      .award-meta { display: none; }
+      .footer-cols { grid-template-columns: 1fr; padding: 0 22px 40px; }
+      .footer-bottom { padding: 24px 22px; flex-direction: column; align-items: flex-start; }
+      .footer-copy { text-align: left; }
+      .footer-right-bottom { align-items: flex-start; }
+      .trusted-grid-wrap { margin-left: auto; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<div id="grain"></div>
+
+<!-- NAVBAR -->
+<nav id="navbar">
+  <a href="#" class="nav-logo">Techathon</a>
+  <ul class="nav-links">
+    <li><a href="#">Manifesto →</a></li>
+    <li><a href="#">Webflow Enterprises →</a></li>
+    <li><a href="#" class="nav-cta">Contact</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div id="ball-container">
+    <canvas id="jelly-canvas" width="620" height="620"></canvas>
+  </div>
+  <div class="hero-text">
+    <h1 class="hero-headline">
+      <span class="hl-1">A Different</span>
+      <span class="hl-2">Creative</span>
+      <span class="hl-3">Approach</span>
+    </h1>
+    <div class="scroll-indicator">
+      <div class="scroll-arrow-icon">
+        <svg viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 2v8M3 7l3 3 3-3" stroke="rgba(232,237,245,0.7)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRUSTED BRANDS -->
+<section id="trusted">
+  <div class="trusted-grid-wrap reveal">
+    <div class="trusted-grid" id="brand-grid">
+      <div class="trusted-row" id="row1"></div>
+      <div class="trusted-row" id="row2"></div>
+      <div class="trusted-row" id="row3"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="amb amb1"></div>
+  <div class="amb amb2"></div>
+  <p class="about-statement reveal">
+    We <span class="hollow">Innovators,</span><br>
+    We push the <span class="accent">boundaries</span><br>
+    of digital creativity.
+  </p>
+  <div class="divider reveal d1"></div>
+  <div class="about-cols">
+    <div class="about-col reveal d2">
+      <p>Founder-led Scottish-born global digital marketing, branding, and website agency.</p>
+    </div>
+    <div class="about-col reveal d3">
+      <p>We craft immersive digital experiences through strategy, innovation, and visually driven storytelling.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TOGETHER -->
+<section id="together">
+  <div class="together-left reveal">
+    <div class="together-headline">
+      <span class="tog-italic">HOW ABOUT WE DO A THING</span>
+      <span class="tog-italic">OR TWO</span>
+      <span>TO<span class="tog-plus">+</span>GETHER</span>
+    </div>
+  </div>
+  <div class="together-right reveal d1">
+    <div class="card-pair">
+      <div class="brand-card card-lando c-left"><div class="card-brand-text">LANDO NORRIS</div></div>
+      <div class="brand-card card-wizcom c-right"><div class="card-brand-text">WizCom</div></div>
+    </div>
+    <div class="card-pair">
+      <div class="brand-card card-aether c-left">
+        <img class="airpods-img" id="airpods-img" src="" alt="Airpods" style="display:none;" />
+        <div class="card-brand-text">AETHER<sup style="font-size:0.6em;opacity:0.45;letter-spacing:0;">1</sup></div>
+      </div>
+      <div class="brand-card card-bella c-right">
+        <div class="sky-bg"></div>
+        <div class="card-brand-text">BELLA KITCHENWEAR</div>
+      </div>
+    </div>
+    <div class="card-pair">
+      <div class="brand-card card-jasper c-left"><div class="card-brand-text">Jasper</div></div>
+      <div class="brand-card card-black-violet c-right"><div class="card-brand-text">BLACK<span class="violet-circle"></span></div></div>
+    </div>
+    <div class="card-pair">
+      <div class="brand-card card-aptos c-left"><div class="card-brand-text">APTOS</div></div>
+      <div class="brand-card card-webflow-blue c-right"><div class="card-brand-text">WEBFLOW.COM</div></div>
+    </div>
+    <div class="card-solo">
+      <div class="brand-card card-davidle">
+        <div class="card-brand-text">
+          <span style="display:block;font-size:0.62rem;letter-spacing:0.22em;opacity:0.5;margin-bottom:5px;font-family:'IBM Plex Mono',monospace;">DAVIDLE</span>
+          <span style="font-size:1rem;letter-spacing:0.04em;">ARTIST</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AWARDS -->
+<section id="awards">
+  <div class="awards-list reveal">
+    <div class="award-row" data-index="0">
+      <span class="award-index">01</span>
+      <span class="award-name">AWWWARD</span>
+      <div class="award-meta">
+        <span>Size of Year</span><span>Size of Month</span><span>Size of Day</span>
+        <span class="meta-highlight">Developer Awards</span><span>Honours</span>
+      </div>
+    </div>
+    <div class="award-row" data-index="1">
+      <span class="award-index">02</span>
+      <span class="award-name">FWA</span>
+      <div class="award-meta">
+        <span>Size of Year</span><span>Size of Month</span><span>Size of Day</span>
+        <span class="meta-highlight">Developer Awards</span><span>Honours</span>
+      </div>
+    </div>
+    <div class="award-row" data-index="2">
+      <span class="award-index">03</span>
+      <span class="award-name">CSS DESIGN</span>
+      <div class="award-meta">
+        <span>Size of Year</span><span>Size of Month</span><span>Size of Day</span>
+        <span class="meta-highlight">Developer Awards</span><span>Honours</span>
+      </div>
+    </div>
+    <div class="award-row" data-index="3">
+      <span class="award-index">04</span>
+      <span class="award-name">OPERATIONS</span>
+      <div class="award-meta">
+        <span>Size of Year</span><span>Size of Month</span><span>Size of Day</span>
+        <span class="meta-highlight">Developer Awards</span><span>Honours</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-glow-line"></div>
+  <div class="footer-cols">
+    <div class="footer-mega-col reveal">
+      <div class="footer-mega-text">
+        Build Bolder.<br>
+        <span class="mega-accent">Think Different.</span>
+      </div>
+      <a href="#" class="footer-mega-btn">
+        Start a project
+        <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 7h10M8 3l4 4-4 4"/>
+        </svg>
+      </a>
+    </div>
+    <div class="footer-col reveal d1">
+      <h5>Sitemap</h5>
+      <ul class="sitemap-list">
+        <li><a href="#">Home <span class="arr">→</span></a></li>
+        <li><a href="#">About Us <span class="arr">→</span></a></li>
+        <li><a href="#">Work <span class="arr">→</span></a></li>
+        <li><a href="#">Services <span class="arr">→</span></a></li>
+        <li><a href="#">Contact <span class="arr">→</span></a></li>
+      </ul>
+    </div>
+    <div class="footer-col reveal d2">
+      <h5>Connect</h5>
+      <ul class="social-list">
+        <li><a href="#"><svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" stroke="none"/></svg>Instagram</a></li>
+        <li><a href="#"><svg class="social-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>X (Twitter)</a></li>
+        <li><a href="#"><svg class="social-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>LinkedIn</a></li>
+        <li><a href="#"><svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/></svg>Dribbble</a></li>
+      </ul>
+    </div>
+    <div class="footer-col reveal d3">
+      <h5>Offices</h5>
+      <ul class="office-list">
+        <li>
+          <span class="office-city">London</span>
+          <span class="office-addr">12 Shoreditch High Street<br>London, E1 6JE</span>
+        </li>
+        <li>
+          <span class="office-city">Glasgow</span>
+          <span class="office-addr">45 Merchant City Lane<br>Glasgow, G1 1DH</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div class="ask-ai-block reveal">
+      <span class="ask-ai-label">Ask AI for a summary of</span>
+      <div class="ask-ai-tools">
+        <a href="#" class="ai-pill chatgpt"><span class="ai-logo-box"><img src="gpt.png" alt="ChatGPT" onerror="this.style.display='none'"></span>ChatGPT</a>
+        <a href="#" class="ai-pill claude"><span class="ai-logo-box"><img src="Claude.jpg" alt="Claude" onerror="this.style.display='none'"></span>Claude</a>
+        <a href="#" class="ai-pill gemini"><span class="ai-logo-box"><img src="GEMINI.jpg" alt="Gemini" onerror="this.style.display='none'"></span>Gemini</a>
+        <a href="#" class="ai-pill perplexity"><span class="ai-logo-box"><img src="perp.jpg" alt="Perplexity" onerror="this.style.display='none'"></span>Perplexity</a>
+      </div>
+    </div>
+    <div class="footer-right-bottom">
+      <p class="footer-copy">© 2025 Techathon Studio.<br>All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ── CURSOR ── */
+const curEl = document.getElementById('cursor');
+const ringEl = document.getElementById('cursor-ring');
+let mx=0, my=0, rx=0, ry=0;
+document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; });
+(function tc(){
+  rx += (mx-rx)*.12; ry += (my-ry)*.12;
+  curEl.style.left = mx+'px'; curEl.style.top = my+'px';
+  ringEl.style.left = rx+'px'; ringEl.style.top = ry+'px';
+  requestAnimationFrame(tc);
+})();
+
+/* ── NAVBAR ── */
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar').classList.toggle('scrolled', scrollY > 40);
+}, { passive: true });
+
+/* ── BRAND GRID ── */
+const brands = [
+  [
+    {label:'Slack', cls:'brand-slack'},
+    {label:'Microsoft', cls:'brand-microsoft'},
+    {label:'Webflow', cls:'brand-webflow'},
+    {label:'Salesforce', cls:'brand-salesforce'},
+    {label:'Frontify', cls:'brand-frontify'},
+  ],
+  [
+    {label:'Lando Norris', cls:'brand-lando'},
+    {html:'Steven<span class="dot">·</span>com', cls:'brand-steven'},
+    {label:'Trevor Nova', cls:'brand-trevor'},
+    {label:'Jasper', cls:'brand-jasper'},
+    {label:'Aptos Lab', cls:'brand-aptos'},
+  ],
+  [
+    {label:'Bella', cls:'brand-bella'},
+    {label:'PwC', cls:'brand-pwc'},
+  ],
+];
+['row1','row2','row3'].forEach((id, ri) => {
+  const row = document.getElementById(id);
+  brands[ri].forEach(b => {
+    const box = document.createElement('div'); box.className = 'brand-box';
+    const inner = document.createElement('div'); inner.className = 'brand-text ' + b.cls;
+    if (b.html) inner.innerHTML = b.html; else inner.textContent = b.label;
+    box.appendChild(inner); row.appendChild(box);
+  });
+});
+
+/* ── AWARDS HIGHLIGHT ── */
+(function(){
+  const rows = Array.from(document.querySelectorAll('.award-row'));
+  const pool = [0,1,2,3]; const picks = [];
+  while(picks.length < 2){ const idx = Math.floor(Math.random()*pool.length); picks.push(pool.splice(idx,1)[0]); }
+  picks.forEach(i => rows[i].classList.add('is-active'));
+})();
+
+/* ── SCROLL REVEAL ── */
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('v'); obs.unobserve(e.target); } });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+/* ═══════════════════════════════════════════════════
+   RAINBOW JELLY BLOB — HERO
+═══════════════════════════════════════════════════ */
+(function(){
+  const canvas = document.getElementById('jelly-canvas');
+  const ctx = canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height, cx=W/2, cy=H/2, BASE_R=192, NPTS=11;
+  let time=0, isHovered=false, hoverT=0, riseT=0, colorT=0, canvasMx=cx, canvasMy=cy;
+  const vw=()=>window.innerWidth, vh=()=>window.innerHeight;
+  let bx=vw()*.5, by=vh()*.5, bscale=1, tbx=bx, tby=by, tbscale=1, targetRise=0, targetColor=0;
+  const cont = document.getElementById('ball-container');
+  const applyC=(x,y,s)=>{cont.style.left=x+'px';cont.style.top=y+'px';cont.style.transform=`translate(-50%,-50%) scale(${s})`;};
+  applyC(bx,by,bscale);
+  const lerp=(a,b,t)=>a+(b-a)*t, eio=t=>t<.5?2*t*t:-1+(4-2*t)*t, eo=t=>1-(1-t)*(1-t);
+
+  /* SCROLL: ball moves left on first scroll, then right on next scroll */
+  let scrollDir = 0; // 0=center, 1=left, 2=right
+  let lastScrollY = 0;
+
+  window.addEventListener('scroll', ()=>{
+    const sy = scrollY;
+    const vHeight = vh();
+    // Normalized progress through x-section (scroll phase)
+    const prog = Math.min(sy / vHeight, 1);
+    const e = eio(prog);
+
+    if (prog < 0.5) {
+      // Going to x-section: move left
+      tbx = lerp(vw()*.5, vw()*.15, eio(prog*2));
+      tby = vh()*.5;
+      tbscale = lerp(1, 1.4, eio(prog*2));
+    } else {
+      // Second half: move right
+      tbx = lerp(vw()*.15, vw()*.85, eio((prog-.5)*2));
+      tby = vh()*.5;
+      tbscale = lerp(1.4, 1.5, eio((prog-.5)*2));
+    }
+
+    // Hide ball after x-section
+    const xSection = document.getElementById('x-section');
+    const xBottom = xSection.offsetTop + xSection.offsetHeight;
+    if (sy > xBottom - 100) {
+      tbscale = lerp(1.5, 0, Math.min((sy - (xBottom-100))/300, 1));
+    }
+
+    targetRise = e;
+    targetColor = lerp(0, .75, e);
+    lastScrollY = sy;
+  }, { passive: true });
+
+  canvas.addEventListener('mouseenter',()=>isHovered=true);
+  canvas.addEventListener('mouseleave',()=>{isHovered=false;canvasMx=cx;canvasMy=cy;});
+  canvas.addEventListener('mousemove',e=>{const r=canvas.getBoundingClientRect();canvasMx=e.clientX-r.left;canvasMy=e.clientY-r.top;});
+
+  function getPoints(t,morph){
+    const pts=[];
+    for(let i=0;i<NPTS;i++){
+      const ang=(i/NPTS)*Math.PI*2;
+      const breathe=(Math.sin(t*.5+ang*1.6)*4+Math.cos(t*.35+ang*2.5)*3)*(1-morph*.3);
+      const m1=Math.sin(t*1.5+ang*2.2)*36*morph, m2=Math.cos(t*.9+ang*3.1)*22*morph, m3=Math.sin(t*2.2+ang*1.5)*14*morph;
+      const dx=canvasMx-cx, dy=canvasMy-cy, dist=Math.sqrt(dx*dx+dy*dy);
+      const prox=Math.max(0,1-dist/(BASE_R*1.7))*morph;
+      const push=prox*56*Math.cos(ang-Math.atan2(dy,dx)), jiggle=Math.sin(t*4.5+ang*6)*8*prox;
+      const r=BASE_R+breathe+m1+m2+m3+push+jiggle;
+      pts.push({x:cx+Math.cos(ang)*r, y:cy+Math.sin(ang)*r});
+    }
+    return pts;
+  }
+
+  function drawBlob(pts,fill){
+    ctx.beginPath();
+    for(let i=0;i<pts.length;i++){
+      const c=pts[i],n=pts[(i+1)%pts.length],p=pts[(i-1+pts.length)%pts.length],n2=pts[(i+2)%pts.length];
+      const c1x=c.x+(n.x-p.x)*.18, c1y=c.y+(n.y-p.y)*.18, c2x=n.x-(n2.x-c.x)*.18, c2y=n.y-(n2.y-c.y)*.18;
+      if(i===0) ctx.moveTo(c.x,c.y);
+      ctx.bezierCurveTo(c1x,c1y,c2x,c2y,n.x,n.y);
+    }
+    ctx.closePath(); ctx.fillStyle=fill; ctx.fill();
+  }
+
+  /* RAINBOW: 4 mixed colors — pink, orange, yellow, cyan */
+  function drawRainbow(pts,t){
+    const a1=t*.22, a2=-t*.17+1.2;
+    const r1x=cx+Math.cos(a1)*60, r1y=cy+Math.sin(a1)*60;
+    const r2x=cx+Math.cos(a2)*50, r2y=cy+Math.sin(a2)*50;
+
+    // Pulsing rainbow hue shift
+    const hShift = (t * 40) % 360;
+
+    // Gradient 1: primary body — pink→orange→yellow
+    const g1 = ctx.createRadialGradient(r1x, r1y, 10, cx, cy, BASE_R*1.2);
+    g1.addColorStop(0, `hsla(${(hShift+310)%360},100%,65%,0.92)`);
+    g1.addColorStop(0.35, `hsla(${(hShift+25)%360},100%,60%,0.85)`);
+    g1.addColorStop(0.7, `hsla(${(hShift+55)%360},100%,58%,0.75)`);
+    g1.addColorStop(1, `hsla(${(hShift+185)%360},90%,50%,0.6)`);
+    ctx.save(); drawBlob(pts, g1); ctx.restore();
+
+    // Gradient 2: secondary overlay — cyan/teal
+    const g2 = ctx.createRadialGradient(r2x, r2y, 8, r2x, r2y, BASE_R*.95);
+    g2.addColorStop(0, `hsla(${(hShift+175)%360},100%,60%,0.55)`);
+    g2.addColorStop(0.5, `hsla(${(hShift+210)%360},90%,50%,0.35)`);
+    g2.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.save(); ctx.globalCompositeOperation='screen'; drawBlob(pts, g2); ctx.restore();
+
+    // Gradient 3: violet/magenta shimmer
+    const vx=cx+Math.cos(t*.13)*BASE_R*.65, vy=cy+Math.sin(t*.13)*BASE_R*.65;
+    const g3 = ctx.createRadialGradient(vx, vy, 0, vx, vy, BASE_R*.6);
+    g3.addColorStop(0, `hsla(${(hShift+270)%360},100%,65%,0.45)`);
+    g3.addColorStop(0.5, `hsla(${(hShift+300)%360},80%,55%,0.25)`);
+    g3.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.save(); ctx.globalCompositeOperation='screen'; drawBlob(pts, g3); ctx.restore();
+
+    // Highlight gloss
+    const gl = ctx.createRadialGradient(cx-55+Math.sin(t*.5)*16, cy-65+Math.cos(t*.42)*12, 4, cx-28, cy-40, BASE_R*.9);
+    gl.addColorStop(0, `rgba(255,255,255,0.4)`);
+    gl.addColorStop(0.18, `rgba(255,255,255,0.1)`);
+    gl.addColorStop(1, 'transparent');
+    ctx.save(); ctx.globalCompositeOperation='screen'; drawBlob(pts, gl); ctx.restore();
+  }
+
+  function render(){
+    ctx.clearRect(0,0,W,H); time+=.008;
+    hoverT = lerp(hoverT, isHovered?1:0, .055);
+    riseT  = lerp(riseT,  isHovered?1:targetRise, .048);
+    colorT = lerp(colorT, isHovered?1:targetColor, .048);
+    bx=lerp(bx,tbx,.05); by=lerp(by,tby,.05); bscale=lerp(bscale,tbscale,.05);
+    applyC(bx,by,bscale);
+
+    const pts = getPoints(time, Math.max(hoverT, riseT));
+    const sink = lerp(BASE_R*.92, 0, eo(riseT));
+
+    // Aura glow — rainbow tinted
+    const auraH = (time*40)%360;
+    const aura = ctx.createRadialGradient(cx,cy+sink,BASE_R*.4,cx,cy+sink,BASE_R*1.7);
+    aura.addColorStop(0, `hsla(${auraH},90%,60%,0.15)`);
+    aura.addColorStop(.5, `hsla(${(auraH+120)%360},80%,55%,0.07)`);
+    aura.addColorStop(1, 'transparent');
+    ctx.save(); ctx.filter='blur(38px)'; ctx.translate(0,sink); drawBlob(pts,aura); ctx.restore();
+
+    ctx.save(); ctx.globalAlpha=lerp(.45,.95,Math.max(riseT,colorT)); ctx.translate(0,sink);
+    drawRainbow(pts,time);
+    ctx.restore();
+
+    requestAnimationFrame(render);
+  }
+  render();
+})();
+
+
+
+</script>
+</body>
+</html>
